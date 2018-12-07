@@ -4,10 +4,42 @@
     <meta charset="UTF-8">
     <title>Upwork JS Test</title>
     <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: "Helvetica Neue", "Helvetica", sans-serif;
+        }
+
         .container {
             max-width: 80%;
             margin: 20px auto 0 auto;
         }
+
+        .field-group {
+            display: flex;
+            margin: 10px 0;
+        }
+
+        .field-group.required > label:after {
+            content: '*';
+        }
+
+        .field-group > label {
+            flex-basis: 7%;
+            font-weight: bold;
+        }
+
+        .field-group > input, .field-group > select, .field-group > textarea {
+            line-height: 2em;
+            flex-basis: 20%;
+        }
+
+        .field-group .error {
+            color: #ff5264;
+            line-height: 2em;
+            margin-left: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -37,8 +69,44 @@
             </form>
             <div id="searchResult"></div>
         </section>
+        <section>
+            <h2>Problem 4:</h2>
+            <div class="form-example">
+                <form name="example-form">
+                    <div class="field-group required">
+                        <label for="name">Name</label>
+                        <input type="text" name="name" id="name" required minlength="1" maxlength="100"
+                               pattern="[a-zA-Z\s]{1,100}" />
+                    </div>
+                    <div class="field-group required">
+                        <label for="address1">Address Line 1</label>
+                        <input type="text" name="address1" id="address1" required minlength="1" maxlength="100"
+                               pattern="[a-zA-Z0-9\s]{1,100}" />
+                    </div>
+                    <div class="field-group">
+                        <label for="address2">Address Line 2</label>
+                        <input type="text" name="address2" id="address2"  minlength="1" maxlength="100"
+                               pattern="[a-zA-Z0-9\s]+" />
+                    </div>
+                    <div class="field-group required">
+                        <label for="city">City</label>
+                        <input type="text" name="city" id="city" required minlength="1" maxlength="50"
+                               pattern="[a-zA-Z]+" />
+                    </div>
+                    <div class="field-group required">
+                        <label for="zipCode">Zip Code</label>
+                        <input type="text" name="zipCode" id="zipCode" required pattern="[0-9]{5,5}"
+                                minlength="5" maxlength="5" />
+                    </div>
+                    <div class="button-group">
+                        <button type="reset" class="btn" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn" id="submitBtn">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </section>
     </div>
-    <script
+    <script type="text/javascript"
         src="https://code.jquery.com/jquery-3.3.1.min.js"
         integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
         crossorigin="anonymous"></script>
@@ -123,6 +191,53 @@
                         `The label for node with ID #${nodeId} is: ${label}`;
 
                     $(settings.resultsContainer).html(resultText);
+                },
+
+                clearErrors: function(form) {
+                    $(form).find('.error').remove();
+                },
+
+                handleFormSubmission: function(evt) {
+                    evt.preventDefault();
+                    this.clearErrors($(evt.target).parents('form').get());
+
+                    
+
+                    $(evt.target)
+                        .parents('form')
+                        .find('*:invalid').each((key, input) => {
+                            
+                            let errorMsg = this.getErrorMessageFromValidityState(input.validity);
+                            $(input)
+                                .parent()
+                                .append(`<span class="error">${errorMsg}</span>`);
+                        });
+                },
+
+                handleFormReset: function(evt) {
+                    this.clearErrors($(evt.target).parents('form').get());
+                },
+
+                getErrorMessageFromValidityState: function(validityState)
+                {
+                    if (validityState.valid)
+                        return "";
+
+                    for (var i in validityState) {
+                        if (validityState[i]) {
+                            switch (i) {
+                                case 'valueMissing': return 'This field is required';
+                                case 'typeMismatch': return 'This value does not match the data type for this field';
+                                case 'patternMismatch': return 'This value does not match the pattern';
+                                case 'rangeOverflow': return 'This value is bigger than the maximum allowed value for this field';
+                                case 'rangeUnderflow': return 'This value is less than the minimum allowed value for this field';
+                                case 'stepMismatch': return 'This value does not meet the step requirements';
+                                case 'tooLong': return 'This value is too long for this field';
+                                case 'tooShort': return 'This value is too short for this field';
+                                case 'badInput': return 'This value is not valid';
+                            }
+                        }
+                    }
                 }
             }
         };
@@ -136,12 +251,20 @@
 
         (function($, upwork){
             $(document).ready(function(){
-                $('#loadJsonBtn').click(function(e){
+                $('#loadJsonBtn').click(function(e) {
                     upwork.handleLoadJsonBtnClick(e);
                 });
 
-                $('#nodeSearchBtn').click(function(e){
+                $('#nodeSearchBtn').click(function(e) {
                     upwork.handleSearchTreeBtnClick(e)
+                });
+
+                $('#submitBtn').click(function(evt) {
+                    upwork.handleFormSubmission(evt);
+                });
+
+                $('#cancelBtn').click(function(evt) {
+                    upwork.handleFormReset(evt);
                 });
             });
         }(jQuery, upwork));
