@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upwork JS Test</title>
+    <style>
+        .container {
+            max-width: 80%;
+            margin: 20px auto 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Upwork JS Test</h1>
+        </header>
+        <section>
+            <h2>Problems 1 & 2:</h2>
+            <p>
+                Click on the following button to retrieve the JSON representation of the tree structure:
+                <button type="button" id="loadJsonBtn">Load JSON</button>
+            </p>
+            <div id="responseHolder"></div>
+        </section>
+        <section>
+            <h2>Problem 3:</h2>
+            <p>Please enter the ID of the desired node to get the label for:</p>
+            <form>
+                <fieldset>
+                    <label>
+                        Node ID:
+                        <input type="number" min="1" max="9" required name="nodeId" id="nodeId" />
+                    </label>
+                    <button type="button" id="nodeSearchBtn">Search</button>
+                </fieldset>
+            </form>
+            <div id="searchResult"></div>
+        </section>
+    </div>
+    <script
+        src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+        crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        var Upwork = function($, settings) {
+            return {
+                json: null,
+                loadJson: function(url, onRequest, onSuccess, onError) {
+                    $.ajax({
+                        url: url,
+                        start: onRequest,
+                        success: onSuccess,
+                        error: onError
+                    });
+                },
+                displayJson: function(json) {
+                    const jsonPretty = JSON.stringify(json);
+                    $(settings.jsonHolderElem).html(
+                        `
+                            <p>Response:</p>
+                            <p><code><pre></pre>${jsonPretty}</code></p>
+                        `
+                    );
+                },
+                displayError: function() {
+                    $(settings.jsonHolderElem)
+                        .html('<p style="errorText">Your request could not be completed. Try again later.</p>');
+                },
+                handleLoadJsonBtnClick: function(evt) {
+                    evt.preventDefault();
+                    this.loadJson(
+                        settings.url,
+                        function(){
+                            $(settings.jsonHolderElem).empty()
+                        },
+                        (json) =>{
+                            this.json = json;
+                            this.displayJson(json);
+                        },
+                        () => {
+                            this.displayError();
+                        }
+                    )
+                },
+
+                searchTree: function(tree, nodeId) {
+                    if (
+                        !isNaN(parseInt(nodeId)) && parseInt(tree.id) === parseInt(nodeId)
+                    ) {
+                        return tree.label;
+                    }
+
+                    if (tree.children.length > 0) {
+                        var label;
+                        for (var i in tree.children) {
+                            if(label = this.searchTree(tree.children[i], nodeId)) {
+                                return label;
+                            }
+                        }
+                    }
+                    return false;
+                },
+
+                handleSearchTreeBtnClick: function(evt) {
+                    evt.preventDefault();
+
+                    if (this.json === null || typeof(this.json) === 'undefined') {
+                        alert('Please click on the Load JSON Button prior requesting a search');
+                        return;
+                    }
+
+                    var nodeId = $(settings.nodeIdField).val();
+
+                    if (isNaN(parseInt(nodeId)) || nodeId < 1 || nodeId > 9) {
+                        alert('Please enter a valid Node ID');
+                        return;
+                    }
+
+                    var label = this.searchTree(this.json, nodeId);
+                    var resultText=
+                        (!label) ? 'The node you requested could not be found' :
+                        `The label for node with ID #${nodeId} is: ${label}`;
+
+                    $(settings.resultsContainer).html(resultText);
+                }
+            }
+        };
+
+        var upwork = new Upwork($, {
+            'url': 'http://localhost:8000/problem1.json',
+            'jsonHolderElem': '#responseHolder',
+            'nodeIdField': '#nodeId',
+            'resultsContainer': '#searchResult'
+        });
+
+        (function($, upwork){
+            $(document).ready(function(){
+                $('#loadJsonBtn').click(function(e){
+                    upwork.handleLoadJsonBtnClick(e);
+                });
+
+                $('#nodeSearchBtn').click(function(e){
+                    upwork.handleSearchTreeBtnClick(e)
+                });
+            });
+        }(jQuery, upwork));
+    </script>
+</body>
+</html>
